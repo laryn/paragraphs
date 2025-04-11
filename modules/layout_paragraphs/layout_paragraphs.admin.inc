@@ -21,7 +21,8 @@
  * @ingroup forms
  */
 function layout_paragraphs_edit_content($form, &$form_state, $field = array(), $instance = array()) {
-  $default_template = (!empty($form_state['layout_paragraphs']['select_template']['layout_paragraphs_templates'])) ? $form_state['layout_paragraphs']['select_template']['layout_paragraphs_templates'] : 'default';
+  $default_template = (!empty($form_state['layout_paragraphs']['select_template']['layout_paragraphs_templates'])) ? $form_state['layout_paragraphs']['select_template']['layout_paragraphs_templates'] : 'mini_one_one_one';
+  dpm($form_state['layout_paragraphs']['select_template']['layout_paragraphs_templates']);
 
   if ($instance['widget']['type'] == 'layout_paragraphs') {
     form_load_include($form_state, 'inc', 'layout_paragraphs', 'layout_paragraphs.admin');
@@ -31,7 +32,7 @@ function layout_paragraphs_edit_content($form, &$form_state, $field = array(), $
     $form['#attached']['js'][] = backdrop_get_path('module', 'layout') . '/js/layout.admin.js';
     // $form['#attached']['css'][] = backdrop_get_path('module', 'mini_layouts') . '/css/mini-layouts.admin.css';
 
-    $form['layout_paragraphs'] = array(
+    $build['layout_paragraphs'] = array(
     '#type' => 'container',
       '#attributes' => array(
         'id' => array('ajax-layout-paragraphs-templates'),
@@ -49,25 +50,25 @@ function layout_paragraphs_edit_content($form, &$form_state, $field = array(), $
         }
       }
       if (count($options) > 1) {
-        $form['layout_paragraphs']['select_template'] = layout_paragraphs_select_template($template_options, $default_template);
+        $build['layout_paragraphs']['select_template'] = layout_paragraphs_select_template($build, $form_state, $template_options, $default_template);
       }
       else {
         $template_name = key($options);
-        $form['layout_paragraphs']['select_template']['layout_paragraphs_template'] = array(
+        $build['layout_paragraphs']['select_template']['layout_paragraphs_template'] = array(
           '#type' => 'hidden',
           '#title' => t('Layout template'),
           '#description' => t('Which layout template should be used?'),
           '#value' => (!empty($template_name)) ? $template_name : $default_template,
           '#required' => TRUE,
         );
-        $form['layout_paragraphs']['tempmarkup'] = array(
+        $build['layout_paragraphs']['tempmarkup'] = array(
           '#markup' => '<p>' . t('Only one choice possible, so we will use it automatically.') . '</p>',
         );
       }
 
     }
     else {
-      $form['layout_paragraphs']['tempmarkup'] = array(
+      $build['layout_paragraphs']['tempmarkup'] = array(
         '#markup' => '<p>' . t('No layout templates are available for this field. Using default.') . '</p>',
       );
     }
@@ -87,9 +88,9 @@ function layout_paragraphs_edit_content($form, &$form_state, $field = array(), $
     $layout = new Layout($config);
     $layout_renderer = layout_get_renderer_info('paragraphs_editor');
     $renderer = new LayoutRendererEditorParagraphs($layout, $layout_renderer);
-    $form['layout_paragraphs']['layout']['#markup'] = '<div class="messages info">TBD: Render Layout Here</div>' . $renderer->render();
+    $build['layout_paragraphs']['layout']['#markup'] = '<div class="messages info">TBD: Render Layout Here</div>' . $renderer->render();
 
-    return $form;
+    return $build;
   }
 }
 
@@ -107,20 +108,19 @@ function layout_paragraphs_edit_content_submit($form, &$form_state) {
 /**
  * Select a Layout Paragraphs template from the options.
  */
-function layout_paragraphs_select_template($template_options, $default = 'default') {
-  $form = [];
-  $form['#attached']['js'][] = backdrop_get_path('module', 'layout') . '/js/layout.admin.js';
-  $form['#attached']['css'][] = backdrop_get_path('module', 'layout') . '/css/layout.admin.css';
+function layout_paragraphs_select_template($build, &$form_state, $template_options, $default = 'default') {
+  $build['#attached']['js'][] = backdrop_get_path('module', 'layout') . '/js/layout.admin.js';
+  $build['#attached']['css'][] = backdrop_get_path('module', 'layout') . '/css/layout.admin.css';
 
   foreach ($template_options as $template_option) {
     $pause = 1;
   }
 
-  $form['#attributes'] = array(
+  $build['#attributes'] = array(
     'class' => array('layout-paragraphs-settings-form'),
   );
 
-  $form['layout_paragraphs_templates'] = array(
+  $build['layout_paragraphs_templates'] = array(
     '#title' => t('Layout template'),
     '#type' => 'radios',
     '#default_value' => $default,
@@ -135,46 +135,38 @@ function layout_paragraphs_select_template($template_options, $default = 'defaul
   );
 
   foreach ($template_options as $template_name => $template_info) {
-    $form['layout_paragraphs_templates']['#options'][$template_name] = $template_info->title;
+    $build['layout_paragraphs_templates']['#options'][$template_name] = $template_info->title;
     if ($template_name == $default) {
-      // $form['layout_paragraphs_templates']['#options'][$template_name]['#attributes']['data-default'] = 'default';
+      // $build['layout_paragraphs_templates']['#options'][$template_name]['#attributes']['data-default'] = 'default';
     }
-    // $form['layout_paragraphs_template'][$template_name]['#description'] = theme('layout_paragraphs_template_option', array('template_info' => $template_info));
-    $form['layout_paragraphs_templates'][$template_name]['#description'] = $template_info->preview;
+    // $build['layout_paragraphs_template'][$template_name]['#description'] = theme('layout_paragraphs_template_option', array('template_info' => $template_info));
+    $build['layout_paragraphs_templates'][$template_name]['#description'] = 'hi'; // $template_info->preview;
   }
 
-  $form['layout_paragraphs_templates']['submit'] = array(
-    '#type' => 'container',
-    '#attributes' => array(
-      'class' => array('layout-paragraphs-templates-select'),
+  $build['submit'] = array(
+    '#type' => 'submit',
+    '#submit' => array(
+      'layout_paragraphs_select_template_change',
     ),
-    'button' => array(
-      '#type' => 'submit',
-      '#value' => t('Change layout template'),
-      '#ajax' => array(
-        'callback' => 'layout_paragraphs_select_template_change',
-        'wrapper' => 'ajax-layout-paragraphs-templates',
-        'effect' => 'fade',
-      ),
+    '#value' => t('Change layout template'),
+    '#ajax' => array(
+      'callback' => 'layout_paragraphs_select_template_change_ajax',
+      'wrapper' => 'ajax-layout-paragraphs-templates',
+      'effect' => 'fade',
     ),
-    '#weight' => 100,
   );
 
-  return $form;
+  return $build;
 }
 
-/**
- * After build function to mark default option, which is used by CSS to hide
- * the submit button, if the default value continues to be selected.
- *
- * @param [type] $form
- * @param [type] $form_state
- * @return void
- */
 function layout_paragraphs_select_template_after_build($element, $form_state) {
   $default_template = $element['#default_value'];
   $element[$default_template]['#attributes']['data-default'] = 'true';
   return $element;
+}
+
+function layout_paragraphs_select_template_change_ajax($form, &$form_state) {
+  return $form['field_new_para_field']['und']['layout_paragraphs'];
 }
 
 /**
@@ -186,34 +178,10 @@ function layout_paragraphs_select_template_after_build($element, $form_state) {
  * @return void
  */
 function layout_paragraphs_select_template_change($form, &$form_state) {
-  $new_template_name = $form_state['values']['layout_paragraphs_templates'];
-  $form_element = $form['layout_paragraphs'];
-  $templates = &$form_element['select_template']['layout_paragraphs_templates'];
-  $templates['#default_value'] = $new_template_name;
-  foreach (element_children($templates) as $template_name) {
-    if ($template_name == $new_template_name) {
-      $templates[$template_name]['#attributes']['data-default'] = 'true';
-    }
-    else {
-      unset($templates[$template_name]['#attributes']['data-default']);
-    }
-  }
-  // @todo adjust this refreshing of the layout and shifting paragraphs/regions
-  // once schema and data are in place.
-  $id = (!empty($form_state[$form['#entity_type']])) ? '.' . $form_state[$form['#entity_type']]->id() : '';
-  $config = array(
-    'is_new' => TRUE,
-    'layout_template' => $new_template_name,
-    'type' => 'paragraphs',
-    'is_full_page' => FALSE,
-    'name' => $form['#entity_type'] . '.' . $form['#bundle'] . '.' . $instance['field_name'] . $id,
-  );
-  $layout = new Layout($config);
-  $layout_renderer = layout_get_renderer_info('paragraphs_editor');
-  $renderer = new LayoutRendererEditorParagraphs($layout, $layout_renderer);
-  $form_element['layout']['#markup'] = '<div class="messages info">AJAX: Bleep bloop! Render Layout Here</div>' . $renderer->render();
-
-  return $form_element;
+  $new_template_name = $form_state['values']['field_new_para_field']['und']['layout_paragraphs']['select_template']['layout_paragraphs_templates'];
+  $form_state['layout_paragraphs']['select_template']['layout_paragraphs_templates'] = $new_template_name;
+  $form_state['rebuild'] = TRUE;
+  
 }
 
 /**

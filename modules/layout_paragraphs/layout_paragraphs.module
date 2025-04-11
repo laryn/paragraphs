@@ -267,7 +267,7 @@ function layout_paragraphs_field_widget_form(&$form, &$form_state, $field, $inst
     case 'layout_paragraphs':
       // Return paragraphs_field_multiple_value_form($field, $instance, $langcode, $items, $form, $form_state, $delta, $element);.
       form_load_include($form_state, 'inc', 'layout_paragraphs', 'layout_paragraphs.admin');
-      $form = layout_paragraphs_edit_content($form, $form_state, $field, $instance);
+      return layout_paragraphs_edit_content($form, $form_state, $field, $instance);
   }
 }
 
