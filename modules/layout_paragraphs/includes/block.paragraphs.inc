@@ -113,7 +113,15 @@ class BlockParagraphs extends Block {
       return filter_xss($this->settings['admin_description']);
     }
     $preview_markup = entity_view($this->paragraphs_item, $display_mode);
-    return render($preview_markup);
+
+    if (!empty($this->paragraphs_item->hostEntity())) {
+      $output = render($preview_markup);
+    }
+    else {
+      $output = t('Error generating preview');
+    }
+
+    return $output;
   }
 
   /**
