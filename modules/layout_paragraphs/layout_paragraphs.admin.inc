@@ -1927,6 +1927,15 @@ function layout_paragraphs_block_configure_form_submit($form, &$form_state) {
     $block->uuid = layout_paragraphs_get_block_uuid($paragraphs_item_id);
   }
 
+  // Ensure a host entity on the Paragraphs item.
+  if (empty($block->paragraphs_item->hostEntity())) {
+    if (!empty($layout->name)) {
+      list($entity_type, $bundle, $fieldname, $entity_id) = explode('.', $layout->name);
+      $host_entity = entity_load($entity_type, $entity_id);
+      $block->paragraphs_item->setHostEntity($entity_type, $host_entity);
+    }
+  }
+
   // Temporarily store any unfinished blocks (those that do not yet have a
   // position but were just added) in the layout so it can be retrieved. See
   // layout_paragraphs_tempstore_block_load().
